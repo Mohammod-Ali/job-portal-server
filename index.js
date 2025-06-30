@@ -31,10 +31,10 @@ const verifyToken = (req, res, next) => {
     if(err){
       return res.status(401).send({message: 'unauthorized Access'})
     }
-    
+    req.user = decoded;
+    next()
   })
-
-  next()
+  
 }
 
 
@@ -67,7 +67,16 @@ async function run() {
         secure: false,
 
       })
-      .send(token)
+      .send({success: true})
+    })
+
+
+    app.post('/logout', (req, res) => {
+      res.clearCookie('token', {
+        httpOnly: true,
+        secure: false,
+      })
+       .send({success: true})
     })
     
 
@@ -110,6 +119,10 @@ async function run() {
       const query = { applicant_email: email}
 
       console.log('from jwt', req.cookies)
+      // token email !== query email
+      if(req.user.email !== req.query.email){
+        return res.send(403).send({message: 'forbidden access'})
+      }
 
       const result = await jobApplicationCollection.find(query).toArray()
 
